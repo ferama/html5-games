@@ -1,8 +1,4 @@
-<html><body style='background:#ccc'><canvas style='position:absolute; left:50%;' id="canvas"></canvas>
-<div><label>Punteggio: </label><span id='points'>0</span></div>
-<div><label>Livello: </label><span id='level'>0</span></div>
-<div><label>Righe: </label><span id='rows'>0</span></div>
-<script>
+<html><body><script>
 /*
 La griglia di tetris e' 10x22 (le ultime 2 delle 22 non sono visibili)
 */
@@ -73,8 +69,13 @@ function Game() {
     this.squareSize = 30;
     this.boardColumns = 10;
     this.boardRows = 20;
-    this.basetimer = 1500;
+    this.basetimer = 150;
+    this.timePerLevel = 135;
     this.bgcolor = '#eee';
+    
+    this.points = 0;
+    this.level = 1;
+    this.rowsCounter = 0;
    
     this.boardMatrix = Array(); 
     // build board matrix
@@ -84,25 +85,62 @@ function Game() {
             this.boardMatrix[x][y] = {'value': 0, 'color': this.bgcolor};
         }
     }
-    this.canvas = document.getElementById('canvas');
+    document.body.style['background'] = '#ccc';
+    
+    // canvas
+    this.canvas = document.createElement('canvas');
+    document.body.appendChild(this.canvas);
+    this.canvas.style['position'] = 'absolute';
+    this.canvas.style['left'] = '30%';
     this.canvas.style['background'] = this.bgcolor;
     this.canvas.style['border'] = "1px solid #333";
     this.canvas.style.marginLeft = "-"+(this.squareSize * this.boardColumns / 2);
     this.canvas.width = this.squareSize * this.boardColumns;
     this.canvas.height = this.squareSize * this.boardRows;
-    this.ctx = canvas.getContext("2d");
+
+    var container = document.createElement('div');
+    container.style.position = 'absolute';
+    container.style.left = '45%';
+    container.style.fontSize = '140%';
+    container.style.fontFamily= 'arial';
+
+    var div = document.createElement('div');
+    div.innerHTML = "<label>Punteggio</label><div id='points'>0</div>";
+    div.style.marginBottom = '40%';
+    container.appendChild(div);
+
+    var div = document.createElement('div');
+    div.innerHTML = "<label>Livello</label><div id='level'>1</div>";
+    div.style.marginBottom = '40%';
+    container.appendChild(div);
+
+    var div = document.createElement('div');
+    div.innerHTML = "<label>Righe</label><div id='rows'>0</div>";
+    div.style.marginBottom = '40%';
+    container.appendChild(div);
+
+    var button = document.createElement('button');
+    button.innerHTML = "Start!";
+    button.onclick = this.start.bind(this);
+    button.style.fontSize = '150%';
+    container.appendChild(button);
+    this.startButton = button;
+
+
+    document.body.appendChild(container);
+
+
+    this.ctx = this.canvas.getContext("2d");
 
     document.onkeydown = this.keyEvent.bind(this);;
     this.currentPiece = null;
     this.timer = null;
-    this.points = 0;
-    this.level = 1;
-    this.rowsCounter = 0;
 }
 
 Game.prototype.start = function() {
     this.newPiece();
     this.timer = setInterval(this.timeTick.bind(this), this.basetimer);
+    this.startButton.style.display = 'none';
 }
 
 Game.prototype.timeTick = function() {
@@ -132,13 +170,13 @@ Game.prototype.dropLines = function() {
     if (completedCount > 0) { 
         this.points += completedCount * this.level;
         this.rowsCounter += completedCount;
-
-        if ((this.rowsCounter % 10) == 0) {
-            if (this.level <= 10) {
-                this.level++;
-                clearInterval(this.timer);
-                this.timer = setInterval(this.timeTick.bind(this), this.basetimer - this.level * 80); 
-            }
+        
+        var tmp = Math.floor(this.rowsCounter / 10);
+        if ( tmp && (tmp <= 10) && (tmp != this.level) ) {
+            console.log('level up!');
+            this.level = tmp;
+            clearInterval(this.timer);
+            this.timer = setInterval(this.timeTick.bind(this), this.basetimer - this.level * this.timePerLevel); 
         }
         var newMatrix = Array(); 
         for (var i = 0; i < completedCount; i++) {
@@ -181,6 +219,7 @@ Game.prototype.newPiece = function() {
     this.currentPiece = new Piece();
     if (this.collide(this.currentPiece.matrix, this.currentPiece.row, this.currentPiece.col)) {
         console.log("game over");
+        this.startButton.style.display = 'block';
         clearInterval(this.timer);
     }
     this.drawPiece();
@@ -376,5 +415,6 @@ Game.prototype.keyEvent = function(e) {
 
 /**********************/
 var game = new Game();
-game.start();
+//game.start();
+
 </script></body></html>
