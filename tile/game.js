@@ -7,28 +7,35 @@ function Tile0() {
 }
 function Tile1() {
     this.walkable = false;
-    this.color = '#333';
+    this.color = '#ddd';
 }
 
 function Hero(canvas) {
     this.speed = 200;
+
+    // x e y sono riferiti al centro dell'oggetto
     this.x = canvas.width / 2;
     this.y = canvas.height / 2;
-    this.oldX = 0;
-    this.oldY = 0;
-    this.height = 50;
-    this.width = 50;
-
-    // walking hit directions
-    this.upleft = true;
-    this.downleft = true;
-    this.upright = true;
-    this.downright = true;
+    this.height = 40;
+    this.width = 40;
 }
 
 function Game() {
     this.bgcolor = '#eee';
     this.squareSize = 50;
+
+    /*
+
+                       x
+        -+------------------->
+         |
+         |
+         |
+      y  |
+         |
+         v
+
+    */
     
     this.map = [
         [1, 1, 1, 1, 1, 1, 1, 1],
@@ -74,58 +81,63 @@ function Game() {
     this.buildMap(); 
 
     this.hero = new Hero(this.heroCanvas);
+    
+  /*  this.hero.x = 180;
+    this.hero.y = 70;
+    this.mainLoop(); */
 
     this._then = Date.now();
-    //setInterval(this.mainLoop.bind(this), 10);
+    //setInterval(this.mainLoop.bind(this), 10)
 }
 
-Game.prototype.calculateCollissions = function(x, y) {
-    var downY = Math.floor( (y + this.hero.height - 1) / this.squareSize);
-    var upY = Math.floor( (y - this.hero.height) / this.squareSize) + 1;
-    var leftX = Math.floor( (x - this.hero.width) / this.squareSize) + 1;
-    var rightX = Math.floor( (x + this.hero.width - 1) / this.squareSize);
-//    console.log(upY + " " + downY + " " + leftX + " " + rightX);
-    this.hero.upleft = this.tiles[upY][leftX].walkable;
-    this.hero.upright = this.tiles[upY][rightX].walkable;
-    this.hero.downleft = this.tiles[downY][leftX].walkable;
-    this.hero.downright = this.tiles[downY][rightX].walkable;
- //   console.log(this.hero);
+Game.prototype.calculateCollisions = function(x, y, obj) {
+    var upY = Math.floor( (y - obj.height / 2) / this.squareSize);
+    var downY = Math.floor( (y + obj.height / 2 - 1) / this.squareSize);
+    var leftX = Math.floor( (x - obj.width / 2) / this.squareSize);
+    var rightX = Math.floor( (x + obj.width / 2 - 1) / this.squareSize);
+    //console.log("x:"+ x + " y:" + y + " upY:" + upY + " downY:" + downY + " leftX:" + leftX + " rightX:" + rightX);
+    walkable = {};
+    walkable.upleft = this.tiles[upY][leftX].walkable;
+    walkable.upright = this.tiles[upY][rightX].walkable;
+    walkable.downleft = this.tiles[downY][leftX].walkable;
+    walkable.downright = this.tiles[downY][rightX].walkable;
+    console.log(walkable);
+
+    return walkable;
 }
 
 Game.prototype.update = function(modifier) {
-    var newX = -1;
-    var newY = -1;
+    var delta = Math.floor(this.hero.speed * modifier)
     // up
     if (38 in this.keysDown) { 
-        newY = this.hero.y - Math.floor(this.hero.speed * modifier);
+        walkable = this.calculateCollisions(this.hero.x, this.hero.y - delta, this.hero);
+        if (walkable.upleft && walkable.upright) {
+            this.hero.y -= delta;
+        }
     }
     // down
     if (40 in this.keysDown) { 
-        newY = this.hero.y + Math.floor(this.hero.speed * modifier);
+        walkable = this.calculateCollisions(this.hero.x, this.hero.y + delta, this.hero);
+        if (walkable.downleft && walkable.downright) {
+            this.hero.y += delta; 
+        }
     }
     // left
     if (37 in this.keysDown) { 
-        newX = this.hero.x - Math.floor(this.hero.speed * modifier);
+        walkable = this.calculateCollisions(this.hero.x - delta, this.hero.y, this.hero);
+        if (walkable.upleft && walkable.downleft) {
+            this.hero.x -= delta;
+        }
     }
     // right
     if (39 in this.keysDown) { 
-        newX = this.hero.x + Math.floor(this.hero.speed * modifier);
-    }
-   
-    if ( newX >= 0 && newY >= 0) {
-        this.calculateCollissions(newX, newY);
-        this.hero.x = newX;
-        this.hero.y = newY;
-    } else {
-        if (newX >= 0) {
-            this.calculateCollissions(newX, this.hero.y);
-            this.hero.x = newX;
-        }
-        if (newY >= 0) {
-            this.calculateCollissions(this.hero.x, newY);
-            this.hero.y = newY;
+        walkable = this.calculateCollisions(this.hero.x + delta, this.hero.y, this.hero);
+        if (walkable.upright && walkable.downright) {
+            this.hero.x += delta;
         }
     }
+
+    this.redraw();
 }
 
 Game.prototype.mainLoop = function() {
@@ -133,7 +145,6 @@ Game.prototype.mainLoop = function() {
     var delta = now - this._then;
 
     this.update(delta / 1000);
-    this.redrawHero();
 
     this._then = now;
 }
@@ -162,12 +173,10 @@ Game.prototype.buildMap = function() {
     }
 }
 
-Game.prototype.redrawHero = function() {
-    this.heroCtx.fillStyle = '#800';
-    this.heroCtx.clearRect(this.hero.oldX, this.hero.oldY, this.hero.width, this.hero.height);
-    this.heroCtx.fillRect(this.hero.x, this.hero.y, this.hero.width, this.hero.height);
-    this.hero.oldX = this.hero.x;
-    this.hero.oldY = this.hero.y;
+Game.prototype.redraw = function() {
+    this.heroCtx.fillStyle = '#999';
+    this.heroCtx.clearRect(0, 0, this.heroCanvas.width, this.heroCanvas.height);
+    this.heroCtx.fillRect(this.hero.x - this.hero.width / 2, this.hero.y - this.hero.height / 2, this.hero.width, this.hero.height);
 }
 
 Game.prototype.drawSquare = function(x, y, fillStyle) {
