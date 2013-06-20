@@ -1,5 +1,19 @@
 window.onload = function() {
 
+window.requestAnimFrame = (function(){
+    return  window.requestAnimationFrame ||
+    window.webkitRequestAnimationFrame   ||
+    window.mozRequestAnimationFrame      ||
+    window.oRequestAnimationFrame        ||
+    window.msRequestAnimationFrame       ||
+    function(callback){ window.setTimeout(callback, 1000 / 60); };
+})();
+
+/*
+    http://jsfiddle.net/kmHZt/10/
+
+*/
+
 
 function Tile0() {
     this.walkable = true;
@@ -10,15 +24,43 @@ function Tile1() {
     this.color = '#ddd';
 }
 
-function Hero(canvas) {
+/********************
+ *
+ * Hero Class
+ * 
+ */
+function Hero(canvasWidth, canvasHeight) {
     this.speed = 200;
 
     // x e y sono riferiti al centro dell'oggetto
-    this.x = canvas.width / 2;
-    this.y = canvas.height / 2;
+    this.x = canvasWidth / 2;
+    this.y = canvasHeight / 2;
     this.height = 40;
     this.width = 40;
+    
+    
+    this.canvas = document.createElement('canvas');
+    document.body.appendChild(this.canvas);
+    this.canvas.style['position'] = 'absolute';
+    this.canvas.style['left'] = '30%';
+    this.canvas.width = canvasWidth
+    this.canvas.height = canvasHeight
+    this.ctx = this.canvas.getContext("2d");
 }
+
+Hero.prototype.redraw = function () {
+    this.ctx.fillStyle = '#999';
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.ctx.fillRect(this.x - this.width / 2, this.y - this.height / 2, this.width, this.height);
+
+}
+
+
+/********************
+ *
+ * Game Class
+ * 
+ */
 
 function Game() {
     this.bgcolor = '#eee';
@@ -54,33 +96,23 @@ function Game() {
     document.body.style['background'] = '#ccc';
     
     // canvas
-    this.mapCanvas = document.createElement('canvas');
-    document.body.appendChild(this.mapCanvas);
-    this.mapCanvas.style['position'] = 'absolute';
-    this.mapCanvas.style['left'] = '30%';
-    this.mapCanvas.style['background'] = this.bgcolor;
-    this.mapCanvas.style['border'] = "1px solid #333";
-    this.mapCanvas.width = this.mapWidth * this.squareSize; 
-    this.mapCanvas.height = this.mapHeight * this.squareSize; 
-    this.mapCtx = this.mapCanvas.getContext("2d");
+    this.canvas = document.createElement('canvas');
+    document.body.appendChild(this.canvas);
+    this.canvas.style['position'] = 'absolute';
+    this.canvas.style['left'] = '30%';
+    this.canvas.style['background'] = this.bgcolor;
+    this.canvas.style['border'] = "1px solid #333";
+    this.canvas.width = this.mapWidth * this.squareSize; 
+    this.canvas.height = this.mapHeight * this.squareSize; 
+    this.ctx = this.canvas.getContext("2d");
     
-    this.heroCanvas = document.createElement('canvas');
-    document.body.appendChild(this.heroCanvas);
-    this.heroCanvas.style['position'] = 'absolute';
-    this.heroCanvas.style['left'] = '30%';
-    this.heroCanvas.width = this.mapWidth * this.squareSize; 
-    this.heroCanvas.height = this.mapHeight * this.squareSize; 
-    this.heroCtx = this.heroCanvas.getContext("2d");
-
-
-
     this.keysDown = {}
     document.onkeydown = this.keyDown.bind(this);;
     document.onkeyup = this.keyUp.bind(this);;
     
     this.buildMap(); 
 
-    this.hero = new Hero(this.heroCanvas);
+    this.hero = new Hero(this.canvas.width, this.canvas.height);
     
   /*  this.hero.x = 180;
     this.hero.y = 70;
@@ -88,6 +120,8 @@ function Game() {
 
     this._then = Date.now();
     //setInterval(this.mainLoop.bind(this), 10)
+
+    window.requestAnimFrame(this.mainLoop.bind(this));
 }
 
 Game.prototype.calculateCollisions = function(x, y, obj) {
@@ -101,7 +135,6 @@ Game.prototype.calculateCollisions = function(x, y, obj) {
     walkable.upright = this.tiles[upY][rightX].walkable;
     walkable.downleft = this.tiles[downY][leftX].walkable;
     walkable.downright = this.tiles[downY][rightX].walkable;
-    console.log(walkable);
 
     return walkable;
 }
@@ -147,6 +180,8 @@ Game.prototype.mainLoop = function() {
     this.update(delta / 1000);
 
     this._then = now;
+    
+    window.requestAnimFrame(this.mainLoop.bind(this));
 }
 
 Game.prototype.keyDown = function(e) {
@@ -174,17 +209,15 @@ Game.prototype.buildMap = function() {
 }
 
 Game.prototype.redraw = function() {
-    this.heroCtx.fillStyle = '#999';
-    this.heroCtx.clearRect(0, 0, this.heroCanvas.width, this.heroCanvas.height);
-    this.heroCtx.fillRect(this.hero.x - this.hero.width / 2, this.hero.y - this.hero.height / 2, this.hero.width, this.hero.height);
+    this.hero.redraw();
 }
 
 Game.prototype.drawSquare = function(x, y, fillStyle) {
     var dimX = x * this.squareSize;
     var dimY = y * this.squareSize;
-    this.mapCtx.fillStyle = fillStyle;
-    this.mapCtx.rect(dimX, dimY, this.squareSize, this.squareSize);
-    this.mapCtx.fillRect(dimX + 1, dimY + 1, this.squareSize - 1, this.squareSize - 1);
+    this.ctx.fillStyle = fillStyle;
+    this.ctx.rect(dimX, dimY, this.squareSize, this.squareSize);
+    this.ctx.fillRect(dimX + 1, dimY + 1, this.squareSize - 1, this.squareSize - 1);
 }
 
 
