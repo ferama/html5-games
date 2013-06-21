@@ -49,34 +49,34 @@ function Bullet(hero) {
 }
 
 Bullet.prototype.update = function(modifier) {
-    this._erase();
-
     var delta = Math.floor(this.speed * modifier)
     var deltaY = this.dirY * delta;
     var deltaX = this.dirX * delta;
 
     var walkable = this.hero.game.calculateBoardCollissions(this.x + deltaX, this.y + deltaY, this);
-    var moved = false;
+    var alive = false;
+
+    this._erase();
     if (this.dirY == 1 && walkable.downleft && walkable.downright) { 
         this.y += deltaY;
-        moved = true;
+        alive = true;
     }
     if (this.dirY == -1 && walkable.upleft && walkable.upright) { 
         this.y += deltaY;
-        moved = true;
+        alive = true;
     }
     if (this.dirX == -1 && walkable.upleft && walkable.downleft) { 
         this.x += deltaX;
-        moved = true;
+        alive = true;
     }
     if (this.dirX == 1 && walkable.upright && walkable.downright) { 
         this.x += deltaX;
-        moved = true;
+        alive = true;
     }
 
-    if (moved) this._draw();
+    if (alive) this._draw();
 
-    return moved;
+    return alive;
 }
 
 Bullet.prototype._erase = function() {
@@ -95,7 +95,7 @@ Bullet.prototype._draw = function() {
  */
 function Hero(canvas, game) {
     this.speed = 200;
-    this.maxBullets = 5;
+    this.maxBullets = 8;
 
     // x e y sono riferiti al centro dell'oggetto
     this.height = 20;
@@ -167,20 +167,15 @@ Hero.prototype.update= function(modifier) {
     }
     
     // update my bullets 
-    var dead = [];
+    var newBullets = [];
     var index = 0;
     for (var i = 0; i < this.bullets.length; i++) {
-        if (!this.bullets[i].update(modifier)) {
-            dead[index] = i;
+        if (this.bullets[i].update(modifier)) {
+            newBullets[index] = this.bullets[i];
             index++;
         }
     }
-    for (var j = 0; j < dead.length; j++) {
-        console.log(dead);
-        this.bullets.splice(dead[j], 1);
-        console.log(this.bullets);
-    }
-    
+    this.bullets = newBullets;
 }
 
 Hero.prototype._erase = function() {
@@ -326,7 +321,9 @@ function Game() {
 
     window.requestAnimFrame(this.mainLoop.bind(this));
 }
-
+/*
+ * Calculate collision for object at coords x, y
+ */
 Game.prototype.calculateBoardCollissions = function(x, y, obj) {
     var upY = Math.floor( (y - obj.height / 2) / this.squareSize);
     var downY = Math.floor( (y + obj.height / 2 - 1) / this.squareSize);
@@ -334,10 +331,31 @@ Game.prototype.calculateBoardCollissions = function(x, y, obj) {
     var rightX = Math.floor( (x + obj.width / 2 - 1) / this.squareSize);
     //console.log("x:"+ x + " y:" + y + " upY:" + upY + " downY:" + downY + " leftX:" + leftX + " rightX:" + rightX);
     walkable = {};
-    walkable.upleft = this.tiles[upY][leftX].walkable;
-    walkable.upright = this.tiles[upY][rightX].walkable;
-    walkable.downleft = this.tiles[downY][leftX].walkable;
-    walkable.downright = this.tiles[downY][rightX].walkable;
+    if (upY < 0 || leftX < 0 ||
+        downY > this.mapHeight || rightX > this.mapWidth) {
+        console.log("$$$$$$$$$$$$$$$$$$$$ RACE");
+        console.log("x:"+ x + " y:" + y + " upY:" + upY + " downY:" + downY + " leftX:" + leftX + " rightX:" + rightX);
+        console.log(obj);
+        throw new Error("stop execution");
+
+        /*walkable.upleft = false;
+        walkable.upright = false;
+        walkable.downleft = false;
+        walkable.downright = false;*/
+    }
+    else {
+        try {
+            walkable.upleft = this.tiles[upY][leftX].walkable;
+            walkable.upright = this.tiles[upY][rightX].walkable;
+            walkable.downleft = this.tiles[downY][leftX].walkable;
+            walkable.downright = this.tiles[downY][rightX].walkable;
+        } catch(err) {
+            console.log("========================");
+            console.log("x:"+ x + " y:" + y + " upY:" + upY + " downY:" + downY + " leftX:" + leftX + " rightX:" + rightX);
+            console.log(obj);
+            throw new Error("stop execution: " + err);
+        }
+    }
 
     return walkable;
 }
