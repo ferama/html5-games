@@ -122,7 +122,7 @@ function Hero(canvas, game) {
     this._draw();
 }
 
-Hero.prototype.update= function(modifier) {
+Hero.prototype.update = function(modifier) {
     var delta = Math.floor(this.speed * modifier)
     
     // up w
@@ -234,7 +234,31 @@ Hero.prototype.keyUp = function(e) {
  * 
  */
 
-function Enemy(mapCanvas) {
+function Enemy(canvas, game) {
+    this.speed = 200;
+    this.height = 20;
+    this.width = 20;
+    
+    this.canvas = canvas; 
+    this.game = game;
+    this.ctx = this.canvas.getContext("2d");
+    
+    this.x = 1;
+    this.y = 1;
+
+    this.dirY = 1;
+    this.dirX = 1;
+    
+    this._draw();
+}
+
+Enemy.prototype.update = function(modifier) {
+}
+
+Enemy.prototype._draw = function(modifier) {
+}
+
+Enemy.prototype._erase = function(modifier) {
 }
 
 
