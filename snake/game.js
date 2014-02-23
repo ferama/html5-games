@@ -19,57 +19,39 @@ Crafty.c("Snake", {
     },
     dirX: 1,
     dirY: 0,
-    nextDirX: this.dirX,
-    nextDirY: this.dirY,
     speed: 1,
-    loopC: 0,
     died: false,
     changingDirection: false,
+    directionsStack: [],
     onKeyDown: function(e) {
         switch (e.key) {
             case Crafty.keys.A:
-                if (!this.changingDirection) {
-                    this.changingDirection = true;
-                    this.nextDirY = 0;
-                    this.nextDirX = -1;
-                }
+                this.directionsStack.push({x:-1, y:0});
                 break;
             case Crafty.keys.W:
-                if (!this.changingDirection) {
-                    this.changingDirection = true;
-                    this.nextDirY = -1;
-                    this.nextDirX = 0;
-                }
+                this.directionsStack.push({x:0, y:-1});
                 break;
             case Crafty.keys.D:
-                if (!this.changingDirection) {
-                    this.changingDirection = true;
-                    this.nextDirY = 0;
-                    this.nextDirX = 1;
-                }
+                this.directionsStack.push({x:1, y:0});
                 break;
             case Crafty.keys.S:
-                if (!this.changingDirection) {
-                    this.changingDirection = true;
-                    this.nextDirY = 1;
-                    this.nextDirX = 0;
-                }
+                this.directionsStack.push({x:0, y:1});
                 break;
 
         }
     },
     timeSplit: 0,
     onFrameEvent: function(dt) {
-        if (this.timeSplit < 8) {
+        if (this.timeSplit < 6) {
             this.timeSplit++;
             return;
         }
         this.timeSplit = 0;
         if (!this.died) {
-            if (this.changingDirection) {
-                this.changingDirection = false;
-                this.dirX = this.nextDirX;
-                this.dirY = this.nextDirY;
+            if (this.directionsStack.length > 0) {
+                var nextDir = this.directionsStack.shift();
+                this.dirX = nextDir.x;
+                this.dirY = nextDir.y;
             }
 
             // posizione testa snake
