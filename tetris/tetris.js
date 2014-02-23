@@ -105,13 +105,7 @@ function Game() {
     this.rowsCounter = 0;
    
     this.boardMatrix = Array(); 
-    // build board matrix
-    for (var x = 0; x < this.boardRows; x++) {
-        this.boardMatrix[x] = new Array();
-        for (var y = 0; y < this.boardColumns; y++) {
-            this.boardMatrix[x][y] = {'value': 0, 'color': this.bgcolor};
-        }
-    }
+    
     document.body.style['background'] = '#ccc';
 
     this.sound = new Sound();
@@ -167,10 +161,18 @@ function Game() {
 }
 
 Game.prototype.start = function() {
+    // build board matrix
+    for (var x = 0; x < this.boardRows; x++) {
+        this.boardMatrix[x] = new Array();
+        for (var y = 0; y < this.boardColumns; y++) {
+            this.boardMatrix[x][y] = {'value': 0, 'color': this.bgcolor};
+        }
+    }
+    this.refreshScreen();
     this.newPiece();
     this.timer = setInterval(this.timeTick.bind(this), this.basetimer);
     this.startButton.style.display = 'none';
-    this.sound.play('backtrack');
+    //this.sound.play('backtrack');
 }
 
 Game.prototype.timeTick = function() {
@@ -197,6 +199,7 @@ Game.prototype.dropLines = function() {
             completedCount++;
         }
     }
+
     
     if (completedCount > 0) { 
         this.sound.play('clear');
@@ -413,6 +416,10 @@ Game.prototype.goDown = function() {
 
 Game.prototype.fall = function() {
     while (this.goDown()) {}
+    this.sound.play('pop');
+    this.dropLines()
+    delete this.currentPiece;
+    this.newPiece();
 }
 
 Game.prototype.keyEvent = function(e) {
