@@ -100,6 +100,10 @@ Crafty.c("SnakePiece", {
 });
 
 
+Crafty.sprite("32", "img/wall.jpg", {
+    "Wall": [0,0]
+});
+
 window.game = {
     snakePieces: [],
     init: function() {
@@ -170,4 +174,15 @@ window.game = {
 
 }
 
-game.init();
+Crafty.load(["images/wall.jpg"], 
+    function() {
+        // loaded
+        game.init();
+    },
+    function(e) {
+        // progress
+    },
+    function(e) {
+        // error
+    }
+);
